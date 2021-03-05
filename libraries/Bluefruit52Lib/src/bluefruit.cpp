@@ -38,11 +38,23 @@
 #include <Nffs.h>
 #include "utility/bonding.h"
 
+#ifndef CFG_BLE_TX_POWER_LEVEL
 #define CFG_BLE_TX_POWER_LEVEL           0
-#define CFG_DEFAULT_NAME                 "Bluefruit52"
+#endif
 
+#ifndef CFG_DEFAULT_NAME
+#define CFG_DEFAULT_NAME                 "Bluefruit52"
+#endif
+
+
+#ifndef CFG_BLE_TASK_STACKSIZE
 #define CFG_BLE_TASK_STACKSIZE          (512*3)
+#endif
+
+#ifndef CFG_SOC_TASK_STACKSIZE
 #define CFG_SOC_TASK_STACKSIZE          (200)
+#endif
+
 
 AdafruitBluefruit Bluefruit;
 
@@ -94,7 +106,7 @@ AdafruitBluefruit::AdafruitBluefruit(void)
 
   _sd_cfg.attr_table_size = 0x800;
   _sd_cfg.uuid128_max     = BLE_UUID_VS_COUNT_DEFAULT;
-  _sd_cfg.service_changed = 0;
+  _sd_cfg.service_changed = 1;
 
 
   _prph_count    = 0;
@@ -231,6 +243,21 @@ err_t AdafruitBluefruit::begin(uint8_t prph_count, uint8_t central_count)
       .accuracy      = NRF_CLOCK_LF_ACCURACY_20_PPM
       #endif
   };
+#elif defined( USE_LFRC )
+  nrf_clock_lf_cfg_t clock_cfg = 
+  {
+      // LXRC
+      .source        = NRF_CLOCK_LF_SRC_RC,
+      .rc_ctiv       = 16,
+      .rc_temp_ctiv  = 2,
+      #if SD_VER < 500
+      .xtal_accuracy = NRF_CLOCK_LF_XTAL_ACCURACY_250_PPM
+      #else
+      .accuracy      = NRF_CLOCK_LF_ACCURACY_250_PPM
+      #endif
+  };
+#else
+  #error Clock Source is not configured, define USE_LFXO or USE_LFRC according to your board
 #endif
 
   VERIFY_STATUS( sd_softdevice_enable(&clock_cfg, nrf_error_cb) );
